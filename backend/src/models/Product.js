@@ -6,25 +6,40 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     description: {
       type: String,
       required: true,
     },
+
     category: {
       type: String,
       enum: ["Chaniya Choli", "Kurti Pair", "Gown Sets"],
       required: true,
     },
+    occasion: {
+  type: [String],
+  default: [],
+},
+
     size: {
       type: [String],
       default: [],
     },
+
     price: {
       type: Number,
       required: true,
     },
+
+    // ✅ NEW FIELD
+    discount: {
+      type: Number,
+      // percentage
+    },
+
     images: {
-      type: [String], // Cloudinary URLs
+      type: [String],
     },
 
     stock: {
@@ -34,5 +49,14 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// ✅ Virtual field for discounted price
+productSchema.virtual("finalPrice").get(function () {
+  return Math.round(this.price - (this.price * this.discount) / 100);
+});
+
+// ✅ allow virtual fields in JSON response
+productSchema.set("toJSON", { virtuals: true });
+productSchema.set("toObject", { virtuals: true });
 
 export default mongoose.model("Product", productSchema);

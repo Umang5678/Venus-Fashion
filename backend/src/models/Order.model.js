@@ -4,6 +4,7 @@ const orderSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     phone: { type: String, required: true },
+    email: { type: String, required: true },
     address: { type: String, required: true },
     city: { type: String, required: true },
     postal: { type: String, required: true },
@@ -22,6 +23,7 @@ const orderSchema = new mongoose.Schema(
         price: Number,
         quantity: Number,
         image: String,
+        size: String,
       },
     ],
 

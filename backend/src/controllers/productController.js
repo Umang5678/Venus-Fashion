@@ -6,7 +6,8 @@ import cloudinary from "./../config/cloudinary.js";
 // ===============================
 export const addProduct = async (req, res) => {
   try {
-    let { name, description, category, price, stock, size } = req.body;
+    let { name, description, category, price, stock, size, discount, occasion } =
+      req.body;
     let images = [];
 
     if (typeof size === "string") {
@@ -29,10 +30,12 @@ export const addProduct = async (req, res) => {
     const product = await Product.create({
       name,
       description,
-      category: category, // ✅ ensure lowercase
+      category,
       price,
       stock,
       size,
+      occasion: JSON.parse(occasion || "[]"), 
+      discount, // ✅ new field
       images,
     });
 
@@ -51,30 +54,22 @@ export const addProduct = async (req, res) => {
   }
 };
 
-// ===============================
-// 📋 Get All Products
-// ===============================
-// export const getProducts = async (req, res) => {
-//   try {
-//     const products = await Product.find();
-//     res.json(products);
-//   } catch (error) {
-//     console.error("Error fetching products:", error);
-//     res.status(500).json({ message: "Error fetching products" });
-//   }
-// };
-
 // Example in Node/Express
 export const getProducts = async (req, res) => {
   try {
-    const { category } = req.query;
+    const { category, occasion } = req.query;
+
     const filter = {};
+
     if (category) filter.category = category;
 
-    const products = await Product.find(filter);
-    // check format
+    if (occasion) filter.occasion = { $in: [occasion] };
 
-    res.json(products); // must be a plain array!
+    const products = await Product.find(filter);
+
+    res.set("Cache-Control", "no-store");
+
+    res.json(products);
   } catch (error) {
     console.error("❌ Error fetching products:", error);
     res.status(500).json({ message: "Server Error" });
