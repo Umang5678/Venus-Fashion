@@ -111,18 +111,6 @@ Venus-Fashion/
 
 ---
 
-## 📸 Screenshots
-
-Add your project screenshots here.
-
-Example:
-
-```md
-![Home Page](./screenshots/home.png)
-```
-
----
-
 ## 🧪 Available Scripts
 
 | Command | Description |
