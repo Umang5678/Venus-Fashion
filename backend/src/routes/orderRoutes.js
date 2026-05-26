@@ -13,9 +13,15 @@ router.post("/create", createOrder);
 router.get("/user/:userId", getUserOrders);
 router.get("/all", getAllOrders);
 router.put("/update/:id", updateOrder);
-router.get("/track/:phone", async (req, res) => {
+router.get("/track/:query", async (req, res) => {
   try {
-    const orders = await Order.find({ phone: req.params.phone }).sort({
+    const searchQuery = req.params.query;
+    const orders = await Order.find({
+      $or: [
+        { phone: searchQuery },
+        { email: searchQuery },
+      ],
+    }).sort({
       createdAt: -1,
     });
 

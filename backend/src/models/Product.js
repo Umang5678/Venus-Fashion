@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema(
 },
 
     size: {
-      type: [String],
+      type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
 
@@ -58,5 +58,10 @@ productSchema.virtual("finalPrice").get(function () {
 // ✅ allow virtual fields in JSON response
 productSchema.set("toJSON", { virtuals: true });
 productSchema.set("toObject", { virtuals: true });
+
+// ✅ Add Indexes for speed optimization
+productSchema.index({ category: 1 });
+productSchema.index({ occasion: 1 });
+productSchema.index({ name: "text", description: "text" });
 
 export default mongoose.model("Product", productSchema);

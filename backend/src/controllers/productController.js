@@ -14,7 +14,12 @@ export const addProduct = async (req, res) => {
       try {
         size = JSON.parse(size);
       } catch {
-        size = [size];
+        try {
+          // Loose JS parser to handle single quotes and unquoted keys
+          size = Function('"use strict";return (' + size + ')')();
+        } catch {
+          size = [size];
+        }
       }
     }
     if (req.files?.length) {
@@ -26,6 +31,23 @@ export const addProduct = async (req, res) => {
       }
     }
 
+    let occasionParsed = [];
+    if (occasion) {
+      if (typeof occasion === "string") {
+        try {
+          occasionParsed = JSON.parse(occasion);
+        } catch {
+          try {
+            occasionParsed = JSON.parse(occasion.replace(/'/g, '"'));
+          } catch {
+            occasionParsed = [occasion];
+          }
+        }
+      } else if (Array.isArray(occasion)) {
+        occasionParsed = occasion;
+      }
+    }
+
     console.log("IMAGES:", images);
     const product = await Product.create({
       name,
@@ -34,7 +56,7 @@ export const addProduct = async (req, res) => {
       price,
       stock,
       size,
-      occasion: JSON.parse(occasion || "[]"), 
+      occasion: occasionParsed, 
       discount, // ✅ new field
       images,
     });
@@ -57,7 +79,8 @@ export const addProduct = async (req, res) => {
 // Example in Node/Express
 export const getProducts = async (req, res) => {
   try {
-    const { category, occasion } = req.query;
+    const { category, occasion, search, page, limit } = req.query;
+    console.log("➡️ BACKEND: getProducts called with query:", { category, occasion, search, page, limit });
 
     const filter = {};
 
@@ -65,10 +88,37 @@ export const getProducts = async (req, res) => {
 
     if (occasion) filter.occasion = { $in: [occasion] };
 
-    const products = await Product.find(filter);
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
 
     res.set("Cache-Control", "no-store");
 
+    if (page || limit) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 8;
+      const skip = (pageNum - 1) * limitNum;
+
+      const total = await Product.countDocuments(filter);
+      const products = await Product.find(filter).skip(skip).limit(limitNum);
+      console.log(`➡️ BACKEND: Paginated response returning ${products.length} products of ${total} total. pageNum: ${pageNum}, limitNum: ${limitNum}`);
+
+      return res.json({
+        success: true,
+        data: products,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(total / limitNum)
+        }
+      });
+    }
+
+    const products = await Product.find(filter);
     res.json(products);
   } catch (error) {
     console.error("❌ Error fetching products:", error);
@@ -96,6 +146,30 @@ export const getProductById = async (req, res) => {
 // ===============================
 export const updateProduct = async (req, res) => {
   try {
+    if (req.body.size && typeof req.body.size === "string") {
+      try {
+        req.body.size = JSON.parse(req.body.size);
+      } catch {
+        try {
+          // Loose JS parser to handle single quotes and unquoted keys
+          req.body.size = Function('"use strict";return (' + req.body.size + ')')();
+        } catch {
+          req.body.size = [req.body.size];
+        }
+      }
+    }
+    if (req.body.occasion && typeof req.body.occasion === "string") {
+      try {
+        req.body.occasion = JSON.parse(req.body.occasion);
+      } catch {
+        try {
+          req.body.occasion = JSON.parse(req.body.occasion.replace(/'/g, '"'));
+        } catch {
+          req.body.occasion = [req.body.occasion];
+        }
+      }
+    }
+
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
