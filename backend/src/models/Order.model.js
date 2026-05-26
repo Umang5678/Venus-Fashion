@@ -3,10 +3,14 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    firstName: { type: String },
+    lastName: { type: String },
     phone: { type: String, required: true },
     email: { type: String, required: true },
     address: { type: String, required: true },
+    apartment: { type: String },
     city: { type: String, required: true },
+    state: { type: String },
     postal: { type: String, required: true },
 
     paymentMethod: {
